@@ -1,0 +1,5 @@
+<resources>
+    <!-- Platform theme (no material-components XML dependency to download).
+         Compose draws its own Material 3 surface on top of this. -->
+    <style name="Theme.Netblock" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

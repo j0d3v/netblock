@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- broadcast arcs -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6.5"
+        android:strokeLineCap="round"
+        android:pathData="M31.37,51.37 A32,32 0 0 1 76.63,51.37" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6.5"
+        android:strokeLineCap="round"
+        android:pathData="M38.44,58.44 A22,22 0 0 1 69.56,58.44" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6.5"
+        android:strokeLineCap="round"
+        android:pathData="M45.51,65.51 A12,12 0 0 1 62.49,65.51" />
+
+    <!-- signal source dot -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,69.5 a4.5,4.5 0 1 0 0,9 a4.5,4.5 0 1 0 0,-9 z" />
+
+    <!-- block slash: dark halo cuts the arcs, rose stroke on top -->
+    <path
+        android:strokeColor="#FF1E1B4B"
+        android:strokeWidth="14"
+        android:strokeLineCap="round"
+        android:pathData="M38,36 L72,80" />
+    <path
+        android:strokeColor="#FFF43F5E"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:pathData="M38,36 L72,80" />
+</vector>
