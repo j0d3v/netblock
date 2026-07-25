@@ -144,14 +144,6 @@ private fun MainScreen(
                                 .focusRequester(focus),
                             singleLine = true,
                             placeholder = { Text(stringResource(R.string.search_apps)) },
-                            trailingIcon = {
-                                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) {
-                                    Icon(
-                                        Icons.Filled.Close,
-                                        contentDescription = stringResource(R.string.cd_clear)
-                                    )
-                                }
-                            },
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
