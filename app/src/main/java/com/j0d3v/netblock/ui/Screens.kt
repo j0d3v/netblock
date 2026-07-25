@@ -6,7 +6,6 @@ import android.app.Activity
 import android.util.LruCache
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -25,7 +24,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -33,36 +31,38 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -104,30 +104,79 @@ private fun MainScreen(
     val running by vm.vpnRunning.collectAsStateWithLifecycle()
     val toggle = rememberVpnToggle(vm, running)
 
+    var searchActive by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(searchActive) { if (searchActive) focus.requestFocus() }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
                 navigationIcon = {
-                    IconButton(onClick = toggle) {
-                        Icon(
-                            imageVector = if (running) Icons.Filled.Lock else Icons.Outlined.Lock,
-                            contentDescription = stringResource(
-                                if (running) R.string.cd_vpn_on else R.string.cd_vpn_off,
+                    if (searchActive) {
+                        IconButton(onClick = { searchActive = false; query = "" }) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.close)
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = toggle) {
+                            Icon(
+                                imageVector = if (running) Icons.Filled.Lock else Icons.Outlined.Lock,
+                                contentDescription = stringResource(
+                                    if (running) R.string.cd_vpn_on else R.string.cd_vpn_off,
+                                ),
+                                tint = if (running) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(30.dp),
+                            )
+                        }
+                    }
+                },
+                title = {
+                    if (searchActive) {
+                        TextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focus),
+                            singleLine = true,
+                            placeholder = { Text(stringResource(R.string.search_apps)) },
+                            trailingIcon = {
+                                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = stringResource(R.string.cd_clear)
+                                    )
+                                }
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
                             ),
-                            tint = if (running) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(30.dp),
                         )
                     }
                 },
                 actions = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            Icons.Filled.Settings,
-                            contentDescription = stringResource(R.string.cd_settings),
-                            modifier = Modifier.size(30.dp),
-                        )
+                    if (!searchActive) {
+                        IconButton(onClick = { searchActive = true }) {
+                            Icon(
+                                Icons.Filled.Search,
+                                contentDescription = stringResource(R.string.cd_search),
+                                modifier = Modifier.size(28.dp),
+                            )
+                        }
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = stringResource(R.string.cd_settings),
+                                modifier = Modifier.size(30.dp),
+                            )
+                        }
                     }
                 },
             )
@@ -142,6 +191,7 @@ private fun MainScreen(
                     AppList(
                         padding = padding,
                         apps = s.apps,
+                        query = query,
                         onToggle = vm::toggle,
                         onSetBlocked = vm::setBlocked,
                     )
@@ -154,10 +204,10 @@ private fun MainScreen(
 private fun AppList(
     padding: PaddingValues,
     apps: List<AppUi>,
+    query: String,
     onToggle: (String) -> Unit,
     onSetBlocked: (List<String>, Boolean) -> Unit,
 ) {
-    var query by remember { mutableStateOf("") }
     val visible = remember(apps, query) {
         if (query.isBlank()) apps
         else apps.filter {
@@ -173,24 +223,6 @@ private fun AppList(
             .fillMaxSize()
             .padding(padding)
     ) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            singleLine = true,
-            shape = RoundedCornerShape(28.dp),
-            placeholder = { Text(stringResource(R.string.search_apps)) },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            trailingIcon = {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = { query = "" }) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_clear))
-                    }
-                }
-            },
-        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -198,94 +230,33 @@ private fun AppList(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(R.string.blocked_count, apps.count { it.isBlocked }, apps.size),
+                text = "${apps.count { it.isBlocked }}/${apps.size}",
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(
-                onClick = { onSetBlocked(apps.map { it.packageName }, !allBlocked) },
-            ) {
+            TextButton(onClick = { onSetBlocked(apps.map { it.packageName }, !allBlocked) }) {
                 Text(stringResource(if (allBlocked) R.string.unblock_all else R.string.block_all))
             }
         }
 
         if (visible.isEmpty()) {
-            Centered(PaddingValues(0.dp)) { Text(stringResource(R.string.empty_no_matches)) }
+            Centered { Text(stringResource(R.string.empty_no_matches)) }
         } else {
-            val (blocked, allowed) = visible.partition { it.isBlocked }
-            var allowedCollapsed by remember { mutableStateOf(false) }
-            var blockedCollapsed by remember { mutableStateOf(false) }
-            // Allowing an app moves it into the top group, so scroll up to reveal it.
+            val ordered = remember(visible) { visible.sortedBy { it.isBlocked } }
             val listState = rememberLazyListState()
-            var prevAllowed by remember { mutableStateOf(allowed.size) }
-            LaunchedEffect(allowed.size) {
-                if (allowed.size > prevAllowed) listState.animateScrollToItem(0)
-                prevAllowed = allowed.size
+            var prevAllowed by remember { mutableIntStateOf(ordered.count { !it.isBlocked }) }
+            LaunchedEffect(ordered) {
+                val allowed = ordered.count { !it.isBlocked }
+                if (allowed > prevAllowed) listState.animateScrollToItem(0)
+                prevAllowed = allowed
             }
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                if (allowed.isNotEmpty()) {
-                    item(key = "hdr-allowed") {
-                        SectionHeader(stringResource(R.string.section_allowed), allowed.size, allowedCollapsed) {
-                            allowedCollapsed = !allowedCollapsed
-                        }
-                    }
-                    if (!allowedCollapsed) items(allowed, key = { it.packageName }) { app ->
-                        AppRow(app, Modifier.animateItem()) { onToggle(app.packageName) }
-                    }
-                }
-                if (blocked.isNotEmpty()) {
-                    item(key = "hdr-blocked") {
-                        SectionHeader(stringResource(R.string.section_blocked), blocked.size, blockedCollapsed) {
-                            blockedCollapsed = !blockedCollapsed
-                        }
-                    }
-                    if (!blockedCollapsed) items(blocked, key = { it.packageName }) { app ->
-                        AppRow(app, Modifier.animateItem()) { onToggle(app.packageName) }
-                    }
+                items(ordered, key = { it.packageName }) { app ->
+                    AppRow(app, Modifier.animateItem()) { onToggle(app.packageName) }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SectionHeader(label: String, count: Int, collapsed: Boolean, onToggle: () -> Unit) {
-    val rotation by animateFloatAsState(if (collapsed) 180f else 0f, label = "chevron")
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onToggle() }
-            .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 1.sp,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.width(14.dp))
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.outlineVariant,
-        )
-        Icon(
-            imageVector = Icons.Filled.KeyboardArrowUp,
-            contentDescription = stringResource(if (collapsed) R.string.cd_expand else R.string.cd_collapse),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .rotate(rotation),
-        )
     }
 }
 
@@ -335,7 +306,7 @@ private fun AppRow(app: AppUi, modifier: Modifier = Modifier, onToggle: () -> Un
 
 @Composable
 private fun Centered(
-    padding: PaddingValues,
+    padding: PaddingValues = PaddingValues(0.dp),
     content: @Composable () -> Unit,
 ) {
     Box(
