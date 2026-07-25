@@ -80,7 +80,10 @@ fun OnboardingScreen(repo: SettingsRepository, onFinish: () -> Unit) {
             .padding(24.dp),
     ) {
         Spacer(Modifier.height(24.dp))
-        Text(stringResource(R.string.onboarding_welcome), style = MaterialTheme.typography.headlineMedium)
+        Text(
+            stringResource(R.string.onboarding_welcome),
+            style = MaterialTheme.typography.headlineMedium
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             stringResource(R.string.onboarding_intro),
