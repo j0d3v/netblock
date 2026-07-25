@@ -3,6 +3,7 @@
 package com.j0d3v.netblock.ui
 
 import android.app.Activity
+import android.util.LruCache
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
@@ -52,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
@@ -361,20 +363,26 @@ private fun rememberVpnToggle(vm: MainViewModel, running: Boolean): () -> Unit {
     }
 }
 
-// Decodes each icon off-main only while its row is composed; cancelled when
-// scrolled away, so off-screen icons are never held.
+// Decoded off-main and cached process-wide so scrolling back is a map hit, not
+// a fresh PackageManager IPC + rasterize. Cache sized by bytes, decode bounded
+// to render size so a big app list can't blow up memory.
+private const val ICON_PX = 96 // ~44dp at xxhdpi
+private val iconCache = object : LruCache<String, ImageBitmap>(8 * 1024 * 1024) {
+    override fun sizeOf(key: String, value: ImageBitmap) = value.width * value.height * 4
+}
+
 @Composable
 private fun rememberAppIcon(packageName: String): Painter? {
     val context = LocalContext.current
-    val painter by produceState<Painter?>(initialValue = null, key1 = packageName) {
+    val bitmap by produceState<ImageBitmap?>(iconCache[packageName], key1 = packageName) {
+        if (value != null) return@produceState
         value = withContext(Dispatchers.IO) {
             runCatching {
-                BitmapPainter(
-                    context.packageManager.getApplicationIcon(packageName).toBitmap()
-                        .asImageBitmap(),
-                )
+                context.packageManager.getApplicationIcon(packageName)
+                    .toBitmap(ICON_PX, ICON_PX).asImageBitmap()
+                    .also { iconCache.put(packageName, it) }
             }.getOrNull() // app uninstalled since load — leave blank
         }
     }
-    return painter
+    return bitmap?.let { remember(it) { BitmapPainter(it) } }
 }
