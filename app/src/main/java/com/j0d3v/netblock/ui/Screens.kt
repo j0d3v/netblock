@@ -250,7 +250,11 @@ private fun AppList(
             }
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 items(ordered, key = { it.packageName }) { app ->
-                    AppRow(app, Modifier.animateItem(), enabled = vpnEnabled) { onToggle(app.packageName) }
+                    AppRow(
+                        app,
+                        Modifier.animateItem(),
+                        enabled = vpnEnabled
+                    ) { onToggle(app.packageName) }
                 }
             }
         }
@@ -258,7 +262,12 @@ private fun AppList(
 }
 
 @Composable
-private fun AppRow(app: AppUi, modifier: Modifier = Modifier, enabled: Boolean = true, onToggle: () -> Unit) {
+private fun AppRow(
+    app: AppUi,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onToggle: () -> Unit
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
