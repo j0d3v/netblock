@@ -3,6 +3,7 @@
 package com.j0d3v.netblock.ui
 
 import android.Manifest
+import android.content.Intent
 import android.net.VpnService
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,12 +41,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.j0d3v.netblock.R
+import com.j0d3v.netblock.data.FirewallRepository
 import com.j0d3v.netblock.data.SettingsRepository
 import com.j0d3v.netblock.util.hasNotificationPermission
 import com.j0d3v.netblock.util.isBatteryExempt
 import com.j0d3v.netblock.util.isVpnConsented
 import com.j0d3v.netblock.util.openAppNotificationSettings
 import com.j0d3v.netblock.util.openBatterySettings
+import com.j0d3v.netblock.vpn.BlockerVpnService
 import kotlinx.coroutines.launch
 
 @Composable
@@ -124,7 +127,19 @@ fun OnboardingScreen(repo: SettingsRepository, onFinish: () -> Unit) {
 
         Spacer(Modifier.height(24.dp))
         Button(
-            onClick = { scope.launch { repo.setOnboarded(); onFinish() } },
+            onClick = {
+                scope.launch {
+                    repo.setOnboarded()
+                    if (vpnGranted) {
+                        FirewallRepository(context).setVpnEnabled(true)
+                        context.startForegroundService(
+                            Intent(context, BlockerVpnService::class.java)
+                                .setAction(BlockerVpnService.ACTION_START),
+                        )
+                    }
+                    onFinish()
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
         ) { Text(stringResource(R.string.get_started)) }
         Spacer(Modifier.height(8.dp))
