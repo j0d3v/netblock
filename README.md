@@ -1,7 +1,13 @@
-# Netblock
+<h1 align="center">Netblock</h1>
 
 An experimental attempt to make yet another VPN-based "firewall" for Android without root access.
 The main motivation is to have a simple approach and a clean UI.
+
+## Screenshots
+
+| Blocking apps | Dark theme | Settings |
+|:---:|:---:|:---:|
+| ![App list with two apps blocked](docs/screenshots/app-list.png) | ![App list in dark theme](docs/screenshots/app-list-dark.png) | ![Settings screen](docs/screenshots/settings.png) |
 
 ## How it works
 
