@@ -184,6 +184,7 @@ private fun MainScreen(
                         padding = padding,
                         apps = s.apps,
                         query = query,
+                        vpnEnabled = running,
                         onToggle = vm::toggle,
                         onSetBlocked = vm::setBlocked,
                     )
@@ -197,6 +198,7 @@ private fun AppList(
     padding: PaddingValues,
     apps: List<AppUi>,
     query: String,
+    vpnEnabled: Boolean,
     onToggle: (String) -> Unit,
     onSetBlocked: (List<String>, Boolean) -> Unit,
 ) {
@@ -227,7 +229,10 @@ private fun AppList(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = { onSetBlocked(apps.map { it.packageName }, !allBlocked) }) {
+            TextButton(
+                onClick = { onSetBlocked(apps.map { it.packageName }, !allBlocked) },
+                enabled = vpnEnabled,
+            ) {
                 Text(stringResource(if (allBlocked) R.string.unblock_all else R.string.block_all))
             }
         }
@@ -245,7 +250,7 @@ private fun AppList(
             }
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 items(ordered, key = { it.packageName }) { app ->
-                    AppRow(app, Modifier.animateItem()) { onToggle(app.packageName) }
+                    AppRow(app, Modifier.animateItem(), enabled = vpnEnabled) { onToggle(app.packageName) }
                 }
             }
         }
@@ -253,11 +258,11 @@ private fun AppList(
 }
 
 @Composable
-private fun AppRow(app: AppUi, modifier: Modifier = Modifier, onToggle: () -> Unit) {
+private fun AppRow(app: AppUi, modifier: Modifier = Modifier, enabled: Boolean = true, onToggle: () -> Unit) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onToggle() }
+            .clickable(enabled = enabled) { onToggle() }
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -292,7 +297,7 @@ private fun AppRow(app: AppUi, modifier: Modifier = Modifier, onToggle: () -> Un
             )
         }
         Spacer(Modifier.width(12.dp))
-        Switch(checked = app.isBlocked, onCheckedChange = { onToggle() })
+        Switch(checked = app.isBlocked, onCheckedChange = { onToggle() }, enabled = enabled)
     }
 }
 
